@@ -7,7 +7,7 @@
 // CWebApplication properties can be configured here.
 return array(
 	'basePath'=>dirname(__FILE__).DIRECTORY_SEPARATOR.'..',
-	'name'=>'MIH - {{Project Name}}',
+	'name'=>'MIH - MEDIUM',
 	'theme'=>'makeithappen', // Set theme name here
 
 	// preloading 'log' component
@@ -18,7 +18,6 @@ return array(
 		'application.models.*',
 		'application.components.*',
 	),
-
 	'defaultController'=>'post',
 
 	// application components
@@ -70,7 +69,6 @@ return array(
 			),
 		),
 	),
-
 	// application-level parameters that can be accessed
 	// using Yii::app()->params['paramName']
 	'params'=>require(dirname(__FILE__).'/params.php'),

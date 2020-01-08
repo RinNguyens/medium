@@ -27,28 +27,28 @@ If you have business inquiries or other questions, please fill out the following
 
 	<?php echo $form->errorSummary($model); ?>
 
-	<div class="row">
+	<div class="row mg-b">
 		<?php echo $form->labelEx($model,'name'); ?>
 		<?php echo $form->textField($model,'name'); ?>
 	</div>
 
-	<div class="row">
+	<div class="row mg-b">
 		<?php echo $form->labelEx($model,'email'); ?>
 		<?php echo $form->textField($model,'email'); ?>
 	</div>
 
-	<div class="row">
+	<div class="row mg-b">
 		<?php echo $form->labelEx($model,'subject'); ?>
 		<?php echo $form->textField($model,'subject',array('size'=>60,'maxlength'=>128)); ?>
 	</div>
 
-	<div class="row">
+	<div class="row mg-b">
 		<?php echo $form->labelEx($model,'body'); ?>
 		<?php echo $form->textArea($model,'body',array('rows'=>6, 'cols'=>50)); ?>
 	</div>
 
 	<?php if(CCaptcha::checkRequirements()): ?>
-	<div class="row">
+	<div class="row mg-b">
 		<?php echo $form->labelEx($model,'verifyCode'); ?>
 		<div>
 		<?php $this->widget('CCaptcha'); ?>
@@ -57,7 +57,7 @@ If you have business inquiries or other questions, please fill out the following
 		<div class="hint">Please enter the letters as they are shown in the image above.
 		<br/>Letters are not case-sensitive.</div>
 	</div>
-	<?php endif; ?>
+	<?php endif; ?>	
 
 	<div class="row submit">
 		<?php echo CHtml::submitButton('Submit'); ?>

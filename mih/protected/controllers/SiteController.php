@@ -63,24 +63,33 @@ class SiteController extends Controller
      * @Todo add your own Google SMTP
      * Ref: https://swiftmailer.symfony.com/docs/introduction.html
      */
-    private function _sendEmail($content)
+    public function _sendEmail($content)
     {
-        // Create the Transport
-//        $transport = (new Swift_SmtpTransport('smtp.example.org', 25))
-//          ->setUsername('your username')
-//          ->setPassword('your password');
-//
-//        // Create the Mailer using your created Transport
-//        $mailer = new Swift_Mailer($transport);
-//
-//        // Create a message
-//        $message = (new Swift_Message('Wonderful Subject'))
-//          ->setFrom(['john@doe.com' => 'John Doe'])
-//          ->setTo(['receiver@domain.org', 'other@domain.org' => 'A name'])
-//          ->setBody('Here is the message itself');
-//
-//        // Send the message
-//        $result = $mailer->send($message);
+        //Create the Transport
+        $model = new ContactForm();
+
+        if(isset($_POST['ContactForm'])) 
+        {
+            $model->attributes = $_POST['ContactForm'];
+            if($model->validate()) 
+            {
+                $transport = (new Swift_SmtpTransport('smtp.gmail.com', 465, 'ssl'))
+                ->setUsername('rinchan98.py@gmail.com')
+                ->setPassword('xlpmiuyymkrgihpu');
+       
+              // Create the Mailer using your created Transport
+              $mailer = new Swift_Mailer($transport);
+       
+              // Create a message
+              $message = (new Swift_Message("{$model->subject}"))
+                ->setFrom(['rinchan98.py@gmail.com' => 'Rin Nguyen'])
+                ->setTo(["{$model->email}", "{$model->email}" => "{$model->name}"])
+                ->setBody("{$model->body}");
+       
+              // Send the message
+              $result = $mailer->send($message);
+            }
+        }
     }
 
     /**
@@ -108,8 +117,9 @@ class SiteController extends Controller
                 $this->redirect(Yii::app()->user->returnUrl);
             }
         }
+        
         // display the login form
-        $this->render('login', array('model' => $model));
+        $this->render('test', array('model' => $model));
     }
 
     /**

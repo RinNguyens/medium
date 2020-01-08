@@ -7,15 +7,20 @@
  * @property string $content
  * @property string $tags
  * @property integer $status
+ * @property string $image
  * @property integer $create_time
  * @property integer $update_time
  * @property integer $author_id
+ * @property integer $categories_id
  */
 class Post extends CActiveRecord
 {
     const STATUS_DRAFT = 1;
     const STATUS_PUBLISHED = 2;
     const STATUS_ARCHIVED = 3;
+
+    public $author_search;
+    
 
     private $_oldTags;
 
@@ -49,8 +54,9 @@ class Post extends CActiveRecord
           array('title', 'length', 'max' => 128),
           array('tags', 'match', 'pattern' => '/^[\w\s,]+$/', 'message' => 'Tags can only contain word characters.'),
           array('tags', 'normalizeTags'),
-
           array('title, status', 'safe', 'on' => 'search'),
+          array('title, image', 'length','safe'=>true,'max'=>255, 'on'=>'insert,update'),
+          array( 'xxx,yyy,author_search', 'safe', 'on'=>'search' ),
         );
     }
 
@@ -63,6 +69,7 @@ class Post extends CActiveRecord
         // class name for the relations automatically generated below.
         return array(
           'author' => array(self::BELONGS_TO, 'User', 'author_id'),
+          'categories' => array(self::BELONGS_TO,'Categories','', 'on'=>'categories_id=id', 'joinType'=>'INNER JOIN', 'alias'=>'categories'),
           'comments' => array(self::HAS_MANY, 'Comment', 'post_id', 'condition' => 'comments.status=' . Comment::STATUS_APPROVED, 'order' => 'comments.create_time DESC'),
           'commentCount' => array(self::STAT, 'Comment', 'post_id', 'condition' => 'status=' . Comment::STATUS_APPROVED),
         );
@@ -79,11 +86,14 @@ class Post extends CActiveRecord
           'content' => 'Content',
           'tags' => 'Tags',
           'status' => 'Status',
+          'image' => "Image",
           'create_time' => 'Create Time',
           'update_time' => 'Update Time',
           'author_id' => 'Author',
+          'categories_id' => 'Categories id',
         );
     }
+    
 
     /**
      * @return string the URL that shows the detail of the post
@@ -196,16 +206,26 @@ class Post extends CActiveRecord
     public function search()
     {
         $criteria = new CDbCriteria;
+        
 
         $criteria->compare('title', $this->title, true);
 
-        $criteria->compare('status', $this->status);
+        $criteria->compare('tags', $this->tags,true);
 
-        return new CActiveDataProvider('Post', array(
-          'criteria' => $criteria,
-          'sort' => array(
-            'defaultOrder' => 'status, update_time DESC',
-          ),
+        $criteria->compare('content', $this->content,true);
+
+
+        return new CActiveDataProvider( 'Post', array(
+            'criteria'=>$criteria,
+            'sort'=>array(
+                'attributes'=>array(
+                    'author_search'=>array(
+                        'asc'=>'author.username',
+                        'desc'=>'author.username DESC',
+                    ),
+                    '*',
+                ),
+            ),
         ));
     }
 

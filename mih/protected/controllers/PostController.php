@@ -15,7 +15,8 @@ class PostController extends Controller
     public function filters()
     {
         return array(
-          'accessControl', // perform access control for CRUD operations
+            'accessControl', // perform access control for CRUD operations
+            
         );
     }
 
@@ -27,19 +28,20 @@ class PostController extends Controller
     public function accessRules()
     {
         return array(
-          array(
-            'allow',  // allow all users to access 'index' and 'view' actions.
-            'actions' => array('index', 'view'),
-            'users' => array('*'),
-          ),
-          array(
-            'allow', // allow authenticated users to access all actions
-            'users' => array('@'),
-          ),
-          array(
-            'deny',  // deny all users
-            'users' => array('*'),
-          ),
+            array(
+                'allow',  // allow all users to access 'index' and 'view' actions. : update, delete
+                'actions' => array('index', 'view','create','update','delete'),
+                'users' => array('*'),
+            ),
+            array(
+                'allow',
+                'users' => array('@'),
+            ),
+           
+            array(
+                'deny',  // deny all users
+                'users' => array('*'),
+            ),
         );
     }
 
@@ -52,8 +54,8 @@ class PostController extends Controller
         $comment = $this->newComment($post);
 
         $this->render('view', array(
-          'model' => $post,
-          'comment' => $comment,
+            'model' => $post,
+            'comment' => $comment,
         ));
     }
 
@@ -64,19 +66,34 @@ class PostController extends Controller
     public function actionCreate()
     {
         $model = new Post;
+        
+
         if (isset($_POST['Post'])) {
+
+            $model->categories_id = $_POST['Categories']['id'];
+
+
             $model->attributes = $_POST['Post'];
 
-            // trigger event
+            // trigger eventcreate
             $model->onNewPost = array($this, 'sendEmail');
 
+            $rnd = rand(0, 9999); // generate random number between 0 - 9999
+
+            $uploadedFile = CUploadedFile::getInstance($model, 'image');
+            $fileName = "{$rnd}-{$uploadedFile}";
+            $model->image = $fileName;
+
+
+
+
             if ($model->save()) {
+                $uploadedFile->saveAs(Yii::app()->basePath . '/../img/' . $fileName);
                 $this->redirect(array('view', 'id' => $model->id));
             }
         }
-
         $this->render('create', array(
-          'model' => $model,
+            'model' => $model,
         ));
     }
 
@@ -84,18 +101,23 @@ class PostController extends Controller
      * Updates a particular model.
      * If update is successful, the browser will be redirected to the 'view' page.
      */
-    public function actionUpdate()
+    public function actionUpdate($id)
     {
-        $model = $this->loadModel();
+        $model = $this->loadModel($id);
+      
         if (isset($_POST['Post'])) {
+            $_POST['Post']['image'] = $model->image;
             $model->attributes = $_POST['Post'];
+            $uploadFile = CUploadedFile::getInstance($model, 'image');
             if ($model->save()) {
-                $this->redirect(array('view', 'id' => $model->id));
+                if (!empty($uploadFile)) {
+                    $uploadFile->saveAs(Yii::app()->basePath . '/../img/' . $model->image);
+                }
             }
         }
 
         $this->render('update', array(
-          'model' => $model,
+            'model' => $model,
         ));
     }
 
@@ -103,20 +125,18 @@ class PostController extends Controller
      * Deletes a particular model.
      * If deletion is successful, the browser will be redirected to the 'index' page.
      */
-    public function actionDelete()
+   
+    public function actionDelete($id)
     {
-        if (Yii::app()->request->isPostRequest) {
-            // we only allow deletion via POST request
-            $this->loadModel()->delete();
-
-            // if AJAX request (triggered by deletion via admin grid view), we should not redirect the browser
-            if (!isset($_GET['ajax'])) {
-                $this->redirect(array('index'));
-            }
-        } else {
+        if(Post::model()->findByPk($id)){            // we only allow deletion via POST request
+            $this->loadModel($id)->delete();
+            
+            if (!isset($_GET['ajax']))
+                $this->redirect(isset($_POST['returnUrl']) ? $_POST['returnUrl'] : array('index'));
+        } else
             throw new CHttpException(400, 'Invalid request. Please do not repeat this request again.');
-        }
     }
+
 
     /**
      * Lists all models.
@@ -124,24 +144,30 @@ class PostController extends Controller
     public function actionIndex()
     {
         $criteria = new CDbCriteria(array(
-          'condition' => 'status=' . Post::STATUS_PUBLISHED,
-          'order' => 'update_time DESC',
-          'with' => 'commentCount',
+            'condition' => 'status=' . Post::STATUS_PUBLISHED,
+            'order' => 'update_time DESC',
+            'with' => 'commentCount',
         ));
         if (isset($_GET['tag'])) {
             $criteria->addSearchCondition('tags', $_GET['tag']);
         }
 
         $dataProvider = new CActiveDataProvider('Post', array(
-          'pagination' => array(
-            'pageSize' => Yii::app()->params['postsPerPage'],
-          ),
-          'criteria' => $criteria,
+            'pagination' => array(
+                'pageSize' => Yii::app()->params['postsPerPage'],
+            ),
+            'criteria' => $criteria,
         ));
 
         $this->render('index', array(
-          'dataProvider' => $dataProvider,
+            'dataProvider' => $dataProvider,
         ));
+    }
+
+    public function actionFollow()
+    {
+        $id = $_GET['id'];
+        echo $id;
     }
 
     /**
@@ -154,7 +180,22 @@ class PostController extends Controller
             $model->attributes = $_GET['Post'];
         }
         $this->render('admin', array(
-          'model' => $model,
+            'model' => $model,
+        ));
+    }
+    /**
+     * Action search.
+     */
+
+    public function actionSearch()
+    {
+        $model = new Post('search');
+        $model->unsetAttributes();
+        if (isset($_GET['search_key'])) {
+            $model->title = $_GET['search_key'];
+        }
+        $this->render('search', array(
+            'model' => $model,
         ));
     }
 
@@ -206,6 +247,8 @@ class PostController extends Controller
     protected function newComment($post)
     {
         $comment = new Comment;
+
+
         if (isset($_POST['ajax']) && $_POST['ajax'] === 'comment-form') {
             echo CActiveForm::validate($comment);
             Yii::app()->end();
@@ -213,6 +256,20 @@ class PostController extends Controller
         if (isset($_POST['Comment'])) {
             $comment->attributes = $_POST['Comment'];
             if ($post->addComment($comment)) {
+                $transport = (new Swift_SmtpTransport('smtp.gmail.com',465,'ssl'))
+                ->setUsername('rinchan98.py@gmail.com')
+                ->setPassword('xlpmiuyymkrgihpu');
+
+                // Create the Mail using
+                $mailer = new Swift_Mailer($transport);
+                //create Mess
+                $message = (new Swift_Message("People Comment"))
+                    ->setFrom(['rinchan98.py@gmail.com' => "Rin Nguyen"])
+                    ->setTo(["{$comment->email}","{$comment->email}" => "{$comment->author}"])
+                    ->setBody("{$comment->content}");
+                    
+                $result = $mailer->send($message);
+
                 if ($comment->status == Comment::STATUS_PENDING) {
                     Yii::app()->user->setFlash('commentSubmitted', 'Thank you for your comment. Your comment will be posted once it is approved.');
                 }
@@ -232,5 +289,4 @@ class PostController extends Controller
         $post = $event->sender;
         var_dump($post->title, $post->content);
     }
-
 }

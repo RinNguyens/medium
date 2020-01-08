@@ -1,0 +1,2 @@
+client-id : 668305653453-s87i96as6h3eqt52g0qgl1er1le1e9ll.apps.googleusercontent.com
+client-secret : Jvn2sewycIQZITHR-LCvjGlH
